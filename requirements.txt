@@ -1,0 +1,11 @@
+# 语音搭子「声音」扩展的运行环境（Python 3.12，NVIDIA 显卡）。setup.ps1 用它装进 .venv。
+# 版本是实测能一起用的组合：transformers 换了版本，faster-qwen3-tts 可能载不进模型。
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+torchaudio==2.11.0+cu128
+transformers==5.15.1
+qwen-tts-hf==0.1.1.post1
+faster-qwen3-tts==0.5.4
+sounddevice==0.5.6
+soundfile==0.14.0
+numpy

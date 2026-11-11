@@ -1,0 +1,28 @@
+{
+  "id": "voice",
+  "title": "声音",
+  "version": "0.2.0",
+  "notes": "语音搭子的声音：本地语音合成（Qwen3-TTS，Serena）把 Agent 写的话念出来；预先合成的句子组给反射即时播放。需要 NVIDIA 显卡",
+  "author": "Tim",
+  "homepage": "https://github.com/kk8o/wuxian-voice",
+  "requires": {"workshop": "0.9.13", "kit": "0.6.0"},
+  "pack": {"exclude": [".venv", "models", "cache", "logs", "tests", "setup.ps1", "requirements.txt"]},
+  "run": ["python", "-m", "voice"],
+  "python": ".venv/Scripts/python.exe",
+  "start": "use",
+  "docs": "AGENT.md",
+  "skills": "skills",
+  "apps": [
+    {
+      "app": "companion",
+      "title": "语音搭子",
+      "prompt": "companion",
+      "hear": ["game:combat", "game:aura", "game:growth", "game:quest", "game:travel", "route:*"],
+      "see": ["me", "route", "today"],
+      "controls": ["mute", "unmute", "less", "more", "test", {"cmd": "brief", "label": "任务播报"}, "stop"],
+      "say": true,
+      "pace": true,
+      "minutes": 720
+    }
+  ]
+}

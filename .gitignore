@@ -1,0 +1,7 @@
+.venv/
+models/
+cache/
+logs/
+voice.local.toml
+__pycache__/
+*.pyc
