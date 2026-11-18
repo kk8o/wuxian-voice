@@ -26,7 +26,8 @@ Two ways you speak:
 
 ## 1. Check
 
-1. The workshop's `status`: link.state is "online". If not, ask the player to start 无限工坊 and keep the game in the
+1. The workshop's `status`: link.state is "online" or "standby" (standby: the link opens by itself when something is
+   sent). If not, ask the player to start 无限工坊 and keep the game in the
    foreground or windowed.
 2. `wk_voice_status`: it starts the extension and loads the voice model (10-30 s the first time; if the call times
    out, call it again in half a minute). Go on when `ready` is true. `error`: the model did not load: tell the player
