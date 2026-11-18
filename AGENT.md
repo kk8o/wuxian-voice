@@ -23,7 +23,8 @@ The voice is fixed (Serena); there is no option to change it. The player sets th
 - `wk_voice_pools` `{}`: `{pools: [{pool, lines, voiced}]}`. The old companion's line bank (`cache/bank/<scene>.jsonl`)
   shows here as pools of the same names (combat_start_elite, kill_rare, death, level ...); it is only read.
 - `wk_voice_stop` `{}`: stops what is playing and drops the queue.
-- `wk_voice_mute` `{"on"}`: `true` stops now and keeps every line silent (the reactions' too) until `false`.
+- `wk_voice_mute` `{"on"}`: `true` stops now and keeps every line silent (the reactions' too) until `false`. The workshop
+  calls it itself when the player gives the app `companion` 静音 or 开声 (mute, unmute).
 
 While muted, `say` and `play` answer `{muted: true}` and say nothing.
 
@@ -35,11 +36,13 @@ reaction may hear it; `wk_voice_status` `recent` lists the last few with their t
 ## Instant lines: pools and reactions
 
 An Agent is too slow for a fight. Make pools of short lines ahead, then let the workshop's reactions play them the
-moment the game says something:
+moment the game says something. The app `companion` brings its own: they are in this extension's manifest
+(`apps[].reactions`), set by the workshop while the app runs and cleared when it stops; four of them rest while the
+player's activity is 安静. For an app of your own, a reaction such as:
 
-    reaction_set {"id": "comp_kill_rare", "owner": "companion", "hear": "game:kill",
+    reaction_set {"id": "my_kill_rare", "owner": "<app>", "hear": "game:kill",
                   "when": {"data.unit.classification": ["rare", "rareelite"]},
                   "call": "voice.play", "args": {"pool": "kill_rare"}, "cooldown": 30}
 
 The skill `companion` (`wk_docs` with `{"skill": "companion"}`) runs the whole companion: the app `companion`
-(语音搭子), its pools, its reactions and what to say.
+(语音搭子), its pools and what to say.

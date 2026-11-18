@@ -1,11 +1,11 @@
 {
   "id": "voice",
   "title": "声音",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "notes": "语音搭子的声音：本地语音合成（Qwen3-TTS，Serena）把 Agent 写的话念出来；预先合成的句子组给反射即时播放。需要 NVIDIA 显卡",
   "author": "Tim",
   "homepage": "https://github.com/kk8o/wuxian-voice",
-  "requires": {"workshop": "0.9.13", "kit": "0.6.0"},
+  "requires": {"workshop": "0.10.0", "kit": "0.7.0"},
   "pack": {"exclude": [".venv", "models", "cache", "logs", "tests", "setup.ps1", "requirements.txt"]},
   "run": ["python", "-m", "voice"],
   "python": ".venv/Scripts/python.exe",
@@ -17,12 +17,49 @@
       "app": "companion",
       "title": "语音搭子",
       "prompt": "companion",
+      "link": "live",
       "hear": ["game:combat", "game:aura", "game:growth", "game:quest", "game:travel", "route:*"],
       "see": ["me", "route", "today"],
-      "controls": ["mute", "unmute", "less", "more", "test", {"cmd": "brief", "label": "任务播报"}, "stop"],
+      "controls": [
+        {"cmd": "mute", "call": "mute", "args": {"on": true}},
+        {"cmd": "unmute", "call": "mute", "args": {"on": false}},
+        "less", "more", "test", {"cmd": "brief", "label": "任务播报"}, "stop"
+      ],
       "say": true,
-      "pace": true,
-      "minutes": 720
+      "pace": {
+        "quiet": {"gather": 6, "every": 180, "idle": false, "most": 30},
+        "normal": {"gather": 5, "every": 60, "idle": 1200, "most": 30},
+        "lively": {"gather": 3, "every": 20, "idle": 480, "most": 30}
+      },
+      "minutes": 720,
+      "reactions": [
+        {"hear": "game:combat.start", "when": {"data.target.classification": "elite"},
+         "call": "voice.play", "args": {"pool": "combat_start_elite"}, "cooldown": 60, "activity": ["normal", "lively"],
+         "note": "开打精英"},
+        {"hear": "game:combat.start", "when": {"data.target.classification": ["rare", "rareelite"]},
+         "call": "voice.play", "args": {"pool": "combat_start_rare"}, "cooldown": 60, "note": "开打稀有怪"},
+        {"hear": "game:combat.start", "when": {"data.target.classification": "worldboss"},
+         "call": "voice.play", "args": {"pool": "combat_start_boss"}, "cooldown": 60, "note": "开打首领"},
+        {"hear": "game:kill", "when": {"data.unit.classification": "elite"},
+         "call": "voice.play", "args": {"pool": "kill_elite"}, "cooldown": 30, "activity": ["normal", "lively"],
+         "note": "打倒精英"},
+        {"hear": "game:kill", "when": {"data.unit.classification": ["rare", "rareelite"]},
+         "call": "voice.play", "args": {"pool": "kill_rare"}, "cooldown": 30, "note": "打倒稀有怪"},
+        {"hear": "game:kill", "when": {"data.unit.classification": "worldboss"},
+         "call": "voice.play", "args": {"pool": "kill_boss"}, "cooldown": 30, "note": "打倒首领"},
+        {"hear": "game:danger",
+         "call": "voice.play", "args": {"pool": "danger_adds", "interrupt": true}, "cooldown": 20, "note": "被围"},
+        {"hear": "game:cast.at_me",
+         "call": "voice.play", "args": {"pool": "cast_at_me"}, "cooldown": 20, "activity": ["normal", "lively"],
+         "note": "怪在读条打你"},
+        {"hear": "game:death",
+         "call": "voice.play", "args": {"pool": "death", "interrupt": true}, "cooldown": 30, "note": "死了"},
+        {"hear": "game:alive",
+         "call": "voice.play", "args": {"pool": "alive"}, "cooldown": 30, "activity": ["normal", "lively"],
+         "note": "复活"},
+        {"hear": "game:level",
+         "call": "voice.play", "args": {"pool": "level"}, "cooldown": 5, "note": "升级"}
+      ]
     }
   ]
 }

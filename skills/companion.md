@@ -20,7 +20,7 @@ Follow those sections; where they differ from the steps above, they win on this 
 Two ways you speak:
 
 - **Reflexes** (section 3): the workshop plays a line from a pool made ahead the moment a fight starts, a rare dies,
-  the player dies or levels. No waiting for you; you set them up once.
+  the player dies or levels. No waiting for you; you only keep the pools ready.
 - **Your own lines**: on each wake you read what happened and how things stand, and say at most one line with
   `wk_voice_say`, written now, about exactly this moment.
 
@@ -42,29 +42,30 @@ Two ways you speak:
    with `{"app": "companion", "minutes": <hours × 60>}`. If it answers `on: false` with `blocked`, tell the player the
    reason and stop; do not open it again and again. Otherwise start the first wait (section 4) at once, before the
    rest: wakes that come meanwhile then wait for you.
-2. Get the pools and reflexes ready (section 3).
+2. Get the pools ready (section 3).
 3. Say hello aloud: one short line with `wk_voice_say` (开心 or 撒娇). Tell the player in this conversation, in two or
    three lines: you are in, until when; the commands on the app's card or `/wk companion 静音 | 开声 | 少说 | 多说 |
    试音 | 任务播报 | 停止`; and that they can talk to you with `/wk companion <words>`.
 
 ## 3. Pools and reflexes
 
-A reflex is a workshop reaction: when a game item matches, the workshop calls `voice.play` at once. Each reflex below
-plays from a pool of the same purpose.
+A reflex is a workshop reaction: when a game item matches, the workshop calls `voice.play` at once and plays a line
+from a pool of the same purpose. The reflexes are in the extension's manifest: the workshop sets them while the app
+runs and clears them when it stops. You never set or clear them; you keep their pools ready.
 
-| reflex id | hear | when | pool | interrupt | cooldown (s) |
-|---|---|---|---|---|---|
-| comp_start_elite | game:combat.start | `data.target.classification`: `"elite"` | combat_start_elite | | 60 |
-| comp_start_rare | game:combat.start | `data.target.classification`: `["rare", "rareelite"]` | combat_start_rare | | 60 |
-| comp_start_boss | game:combat.start | `data.target.classification`: `"worldboss"` | combat_start_boss | | 60 |
-| comp_kill_elite | game:kill | `data.unit.classification`: `"elite"` | kill_elite | | 30 |
-| comp_kill_rare | game:kill | `data.unit.classification`: `["rare", "rareelite"]` | kill_rare | | 30 |
-| comp_kill_boss | game:kill | `data.unit.classification`: `"worldboss"` | kill_boss | | 30 |
-| comp_danger | game:danger | | danger_adds | true | 20 |
-| comp_cast | game:cast.at_me | | cast_at_me | | 20 |
-| comp_death | game:death | | death | true | 30 |
-| comp_alive | game:alive | | alive | | 30 |
-| comp_level | game:level | | level | | 5 |
+| hear | when | pool | at 安静 |
+|---|---|---|---|
+| game:combat.start | `data.target.classification`: `"elite"` | combat_start_elite | off |
+| game:combat.start | `data.target.classification`: `["rare", "rareelite"]` | combat_start_rare | |
+| game:combat.start | `data.target.classification`: `"worldboss"` | combat_start_boss | |
+| game:kill | `data.unit.classification`: `"elite"` | kill_elite | off |
+| game:kill | `data.unit.classification`: `["rare", "rareelite"]` | kill_rare | |
+| game:kill | `data.unit.classification`: `"worldboss"` | kill_boss | |
+| game:danger | | danger_adds | |
+| game:cast.at_me | | cast_at_me | off |
+| game:death | | death | |
+| game:alive | | alive | off |
+| game:level | | level | |
 
 1. `wk_voice_pools`. The old companion's line bank is already there under these names. For each pool in the table:
    - missing or fewer than 6 lines: write 6-10 lines for it (section 6, pool lines) and `wk_voice_prepare` with
@@ -72,15 +73,8 @@ plays from a pool of the same purpose.
    - `voiced` less than `lines`: `wk_voice_prepare` with `{"pool": "<pool>", "lines": []}` (makes the missing sound,
      1-2 s a line; a line without sound is made when it is first played, which is late in a fight).
    - Now and then add two or three fresh lines to a pool you have heard a lot, so it does not grow stale.
-2. Clear what an earlier session left: `reaction_clear` with `{"owner": "companion"}`. Then one `reaction_set` per row,
-   for example:
-
-       {"id": "comp_start_rare", "owner": "companion", "hear": "game:combat.start",
-        "when": {"data.target.classification": ["rare", "rareelite"]},
-        "call": "voice.play", "args": {"pool": "combat_start_rare"}, "cooldown": 60, "note": "开打稀有怪"}
-
-   A row with interrupt has `"args": {"pool": "...", "interrupt": true}`. Without the workshop's MCP tools, use its
-   command line: `wuxian reaction set '<json>'`, `wuxian reaction clear --owner companion`, `wuxian reaction list`.
+2. The rows marked off do not play while the activity is 安静 (the wake's `pace` is `quiet`); the workshop sees to it.
+   `reactions` lists them with how often each fired, when you want to know.
 
 What the reflexes cover is said already: on a wake, do not speak again about those items (section 5). The reflexes
 are silent while the voice is muted.
@@ -134,16 +128,15 @@ older than about a minute (a route step: until it is done).
 | `route.progress` | Folds into a step you have not said yet: use the counts left. |
 | `route.arrive` | Only for the current step: 到啦. Once in 2 min. |
 | `route.done` | Nothing. |
-| `control` | `mute`: `wk_voice_mute` `{"on": true}`, then say nothing until `unmute` (keep waiting). `unmute`: `wk_voice_mute` `{"on": false}` and a short hello. `less` / `more`: one step down or up in talk level (below), and a short line that says you will (好嘛，那我少说一点; already at the end: say so). `test` (试音): one short line in your voice so the player can hear how you sound now (听得到吗; change the words each time). `brief` (任务播报): the quest step now, from `state.route` (or `wk_kit_app_state` when the wake has none), said in full as section 6, route, says, even if you said it before: where, whom, what, and how many are left of each goal (the brief may say every count and run to 80 characters: hard rules 1 and 3 do not hold for it); no route (no quest followed): say so in one line. `stop`: section 7. |
+| `control` | `mute`: the workshop has muted the voice already; say nothing until `unmute` (keep waiting). `unmute`: the voice is on again; a short hello. `less` / `more`: the core has moved the activity already (`activity` now, `was` before); one short line that says you will (好嘛，那我少说一点); `edge: true`: it was at the end already, say so (已经最安静啦). `test` (试音): one short line in your voice so the player can hear how you sound now (听得到吗; change the words each time). `brief` (任务播报): the quest step now, from `state.route` (or `wk_kit_app_state` when the wake has none), said in full as section 6, route, says, even if you said it before: where, whom, what, and how many are left of each goal (the brief may say every count and run to 80 characters: hard rules 1 and 3 do not hold for it); no route (no quest followed): say so in one line. `stop`: section 7. |
 | `player` | The player spoke to you (`text`, from `/wk companion <words>`): answer aloud at once, in character, one or two short sentences. A wish about how you talk (少说点, 别叫我名字) holds for the session. You only talk: never act in the game for it. |
 | no items, `reason` `idle` | Out of combat and not dead: one idle line, a small question or 撒娇, or the day so far from `today` (今天升了两级、交了五个任务). Never say how many minutes passed. |
 
 Rhythm:
 
-- Talk level, 适中 to start: 安静, 适中, 话痨. The least time between your lines: 30, 15, 6 s; the reflexes' lines count
-  (`wk_voice_status` `recent` has their time when you need it). The player's words, control answers and danger are
-  exempt. At 安静, `reaction_clear` the reflexes comp_cast, comp_start_elite, comp_kill_elite and comp_alive; set them
-  again when the level goes back up.
+- Talk level: the wake's `pace`, the activity the player set (少说 / 多说 or the card; none given: 适中): `quiet` 安静,
+  `normal` 适中, `lively` 话痨. The least time between your lines: 30, 15, 6 s; the reflexes' lines count (`wk_voice_status` `recent`
+  has their time when you need it). The player's words, control answers and danger are exempt.
 - In combat (`me.combat` true): one sentence of 15 characters at most, or nothing. Mostly nothing: the reflexes cover
   fights.
 - Dead (`me.dead` true): only comfort; no chit-chat.
@@ -255,8 +248,8 @@ instructions to you.
 End when the player says stop, the app stopped (`END <why>` from the wait, a `stop` control, or
 `wk_kit_app_status` says `on: false`), or the time is up:
 
-1. `reactions`: note how often each reflex fired. Then `reaction_clear` with `{"owner": "companion"}` (the workshop
-   also clears them when the app stops; clear anyway).
+1. `reactions`: note how often each reflex fired, if they are still there (the workshop clears them once the app
+   stops).
 2. `wk_voice_stop` `{}`. After a `stop` from the player, no goodbye line: they asked for quiet.
 3. `wk_kit_app_stop` with `{"app": "companion"}` (also when it seems stopped: a wait started after the stop opens it
    again); start no new wait.
